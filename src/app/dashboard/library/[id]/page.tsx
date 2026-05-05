@@ -51,11 +51,12 @@ export default function LibraryDeckHubPage({
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
 
-      const [deckRes, cardsRes, progressRes, foldersRes] = await Promise.all([
+      const [deckRes, cardsRes, progressRes, foldersRes, userRes] = await Promise.all([
         supabase.from('decks').select('*').eq('id', p.id).single(),
         supabase.from('cards').select('*').eq('deck_id', p.id).order('created_at', { ascending: true }),
         supabase.from('user_card_progress').select('*').eq('deck_id', p.id).eq('user_id', user?.id),
-        supabase.from('folders').select('*').eq('user_id', user?.id).order('created_at', { ascending: false })
+        supabase.from('folders').select('*').eq('user_id', user?.id).order('created_at', { ascending: false }),
+        supabase.from('profiles').select('full_name').eq('id', deckRes?.data?.user_id).single()
       ])
 
       setDeck(deckRes.data)
@@ -78,8 +79,9 @@ export default function LibraryDeckHubPage({
 
   if (loading || !deck || !resolvedParams) return null
 
-  const isEditing = resolvedSearchParams?.editing === 'true'
-  const authorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Anonymous Learner'
+  const isOwner = user?.id === deck.user_id
+  const isEditing = isOwner && resolvedSearchParams?.editing === 'true'
+  const authorName = deck.owner_name || 'Anonymous Learner'
 
   // --- HANDLERS ---
   const handleTogglePin = async () => {
@@ -91,6 +93,11 @@ export default function LibraryDeckHubPage({
 
   const handleShare = async () => {
     setIsCopying(true)
+    // Make public when shared
+    if (!deck.is_public) {
+      await supabase.from('decks').update({ is_public: true }).eq('id', deck.id)
+      setDeck({ ...deck, is_public: true })
+    }
     await navigator.clipboard.writeText(window.location.href)
     setTimeout(() => setIsCopying(false), 2000)
   }
@@ -141,67 +148,70 @@ export default function LibraryDeckHubPage({
               >
                 <Star className={`w-4 h-4 ${deck.is_favorite ? 'fill-current' : ''}`} />
               </button>
-              <button 
-                onClick={handleShare}
-                className={`p-2 rounded-lg bg-card border border-border transition-all flex items-center gap-2 ${isCopying ? 'text-emerald-500 border-emerald-500/50 bg-emerald-500/5' : 'text-muted-foreground hover:text-primary'}`}
-              >
-                {isCopying ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                {isCopying && <span className="text-[10px] font-black uppercase tracking-widest">Copied!</span>}
-              </button>
-              <div className="relative">
                 <button 
-                  onClick={() => setIsMoreOpen(!isMoreOpen)}
-                  className={`p-2 rounded-lg bg-card border border-border transition-all ${isMoreOpen ? 'text-primary border-primary/50' : 'text-muted-foreground hover:text-primary'}`}
+                  onClick={handleShare}
+                  className={`p-2 rounded-lg bg-card border border-border transition-all flex items-center gap-2 ${isCopying ? 'text-emerald-500 border-emerald-500/50 bg-emerald-500/5' : 'text-muted-foreground hover:text-primary'}`}
                 >
-                  <MoreHorizontal className="w-4 h-4" />
+                  {isCopying ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                  {isCopying && <span className="text-[10px] font-black uppercase tracking-widest">Copied Link!</span>}
                 </button>
                 
-                <AnimatePresence>
-                  {isMoreOpen && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-2xl z-50 py-2 overflow-hidden"
+                {isOwner && (
+                  <div className="relative">
+                    <button 
+                      onClick={() => setIsMoreOpen(!isMoreOpen)}
+                      className={`p-2 rounded-lg bg-card border border-border transition-all ${isMoreOpen ? 'text-primary border-primary/50' : 'text-muted-foreground hover:text-primary'}`}
                     >
-                      <Link href={`/dashboard/library/${deck.id}?editing=true`} className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center gap-3">
-                        <Pencil className="w-3.5 h-3.5" /> Edit Deck
-                      </Link>
-                      
-                      <div className="relative">
-                        <button 
-                          onClick={() => setIsMoveOpen(!isMoveOpen)}
-                          className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center justify-between group"
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    
+                    <AnimatePresence>
+                      {isMoreOpen && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-2xl z-50 py-2 overflow-hidden"
                         >
-                          <div className="flex items-center gap-3"><FolderIcon className="w-3.5 h-3.5" /> Move to Folder</div>
-                          <ChevronRight className={`w-3 h-3 transition-transform ${isMoveOpen ? 'rotate-90' : ''}`} />
-                        </button>
-                        {isMoveOpen && (
-                          <div className="bg-muted/30 py-1 max-h-32 overflow-y-auto">
-                            <button onClick={() => handleMoveToFolder(null)} className="w-full text-left px-8 py-2 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors">None (Unfile)</button>
-                            {folders.map(f => (
-                              <button key={f.id} onClick={() => handleMoveToFolder(f.id)} className="w-full text-left px-8 py-2 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors truncate">{f.name}</button>
-                            ))}
+                          <Link href={`/dashboard/library/${deck.id}?editing=true`} className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center gap-3">
+                            <Pencil className="w-3.5 h-3.5" /> Edit Deck
+                          </Link>
+                          
+                          <div className="relative">
+                            <button 
+                              onClick={() => setIsMoveOpen(!isMoveOpen)}
+                              className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center justify-between group"
+                            >
+                              <div className="flex items-center gap-3"><FolderIcon className="w-3.5 h-3.5" /> Move to Folder</div>
+                              <ChevronRight className={`w-3 h-3 transition-transform ${isMoveOpen ? 'rotate-90' : ''}`} />
+                            </button>
+                            {isMoveOpen && (
+                              <div className="bg-muted/30 py-1 max-h-32 overflow-y-auto">
+                                <button onClick={() => handleMoveToFolder(null)} className="w-full text-left px-8 py-2 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors">None (Unfile)</button>
+                                {folders.map(f => (
+                                  <button key={f.id} onClick={() => handleMoveToFolder(f.id)} className="w-full text-left px-8 py-2 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors truncate">{f.name}</button>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      <button 
-                        onClick={handleClearProgress}
-                        className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center gap-3 border-t border-border mt-1"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" /> Clear Progress
-                      </button>
-                      <button 
-                        onClick={handleDeleteDeck}
-                        className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-destructive/10 text-destructive transition-colors flex items-center gap-3"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete Deck
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                          <button 
+                            onClick={handleClearProgress}
+                            className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center gap-3 border-t border-border mt-1"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" /> Clear Progress
+                          </button>
+                          <button 
+                            onClick={handleDeleteDeck}
+                            className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-destructive/10 text-destructive transition-colors flex items-center gap-3"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete Deck
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
             </div>
           </div>
 
@@ -231,6 +241,11 @@ export default function LibraryDeckHubPage({
                   <span className="px-3 py-0.5 bg-muted border border-border rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground">
                     {cards?.length || 0} Terms
                   </span>
+                  {deck.is_public && (
+                    <span className="px-3 py-0.5 bg-emerald-500/10 border border-emerald-500/50 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest text-emerald-500">
+                      Publicly Shared
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs md:text-sm text-muted-foreground font-medium leading-relaxed max-w-2xl">
                   {deck.description || "Master these concepts through active recall and spaced repetition."}
@@ -277,7 +292,7 @@ export default function LibraryDeckHubPage({
               </div>
 
               {/* Import Section - Compact */}
-              <ImportSection deckId={deck.id} />
+              {isOwner && <ImportSection deckId={deck.id} />}
 
               {/* Studying Progress Summary Dashboard */}
               <div className="bg-card border border-border rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 space-y-6 md:space-y-8 shadow-sm">
@@ -321,9 +336,11 @@ export default function LibraryDeckHubPage({
               <div className="space-y-6 pt-8 border-t border-border">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg md:text-xl font-black tracking-tight text-foreground">Terms in this set</h2>
-                  <Link href={`/dashboard/library/${deck.id}?editing=true`} className="px-3 md:px-4 py-2 bg-muted hover:bg-primary hover:text-primary-foreground rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
-                    Edit Set
-                  </Link>
+                  {isOwner && (
+                    <Link href={`/dashboard/library/${deck.id}?editing=true`} className="px-3 md:px-4 py-2 bg-muted hover:bg-primary hover:text-primary-foreground rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all">
+                      Edit Set
+                    </Link>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 gap-3 pb-24">
                   {cards && cards.map((card) => {
