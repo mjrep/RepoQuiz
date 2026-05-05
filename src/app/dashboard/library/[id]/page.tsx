@@ -51,15 +51,26 @@ export default function LibraryDeckHubPage({
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
 
-      const [deckRes, cardsRes, progressRes, foldersRes, userRes] = await Promise.all([
+      // 1. Fetch core data
+      const [deckRes, cardsRes, progressRes, foldersRes] = await Promise.all([
         supabase.from('decks').select('*').eq('id', p.id).single(),
         supabase.from('cards').select('*').eq('deck_id', p.id).order('created_at', { ascending: true }),
         supabase.from('user_card_progress').select('*').eq('deck_id', p.id).eq('user_id', user?.id),
         supabase.from('folders').select('*').eq('user_id', user?.id).order('created_at', { ascending: false }),
-        supabase.from('profiles').select('full_name').eq('id', deckRes?.data?.user_id).single()
       ])
 
-      setDeck(deckRes.data)
+      // 2. Fetch owner profile name
+      let ownerName = 'Anonymous Learner'
+      if (deckRes.data?.user_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', deckRes.data.user_id)
+          .single()
+        if (profile?.full_name) ownerName = profile.full_name
+      }
+
+      setDeck({ ...deckRes.data, owner_name: ownerName })
       setCards(cardsRes.data || [])
       setProgress(progressRes.data || [])
       setFolders(foldersRes.data || [])
