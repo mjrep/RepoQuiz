@@ -1,19 +1,27 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import CreateNewMenu from './CreateNewMenu'
 import ThemeToggle from './ThemeToggle'
+import ProfileModal from './ProfileModal'
 
 interface TopbarProps {
   userId: string
   displayName: string
+  userEmail?: string
   leftContent?: React.ReactNode
 }
 
-export default function Topbar({ userId, displayName, leftContent }: TopbarProps) {
+export default function Topbar({ userId, displayName, userEmail, leftContent }: TopbarProps) {
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+
   return (
-    <header className="h-20 px-10 border-b border-border bg-card/50 backdrop-blur-xl flex items-center justify-between z-40 sticky top-0 transition-colors">
-      <div className="flex-1 max-w-2xl">
+    <header className="h-20 px-4 md:px-10 border-b border-border flex items-center justify-between z-40 sticky top-0 transition-colors">
+      {/* Background with blur - separate to avoid containing block issues for fixed modals */}
+      <div className="absolute inset-0 bg-card/50 backdrop-blur-xl -z-10" />
+      
+      <div className="flex-1 max-w-2xl relative hidden md:block">
         {leftContent || (
           <div className="relative group">
             <input 
@@ -25,13 +33,27 @@ export default function Topbar({ userId, displayName, leftContent }: TopbarProps
           </div>
         )}
       </div>
-      <div className="flex items-center gap-4">
-        <ThemeToggle />
-        <CreateNewMenu userId={userId} />
-        <div className="w-10 h-10 rounded-full border-2 border-card shadow-md bg-primary flex items-center justify-center text-primary-foreground font-bold transition-transform hover:scale-105 cursor-pointer">
-          {displayName.charAt(0).toUpperCase()}
+
+      <div className="flex items-center justify-between w-full md:w-auto md:justify-end gap-3 md:gap-4 relative">
+        <div className="flex items-center gap-2 md:gap-4 ml-auto">
+          <ThemeToggle />
+          <CreateNewMenu userId={userId} />
+          <button 
+            onClick={() => setIsProfileModalOpen(true)}
+            className="w-10 h-10 rounded-full border-2 border-card shadow-md bg-primary flex items-center justify-center text-primary-foreground font-bold transition-transform hover:scale-105 active:scale-95 cursor-pointer overflow-hidden flex-shrink-0"
+          >
+            {displayName.charAt(0).toUpperCase()}
+          </button>
         </div>
       </div>
+
+      <ProfileModal 
+        userId={userId}
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentName={displayName}
+        userEmail={userEmail}
+      />
     </header>
   )
 }

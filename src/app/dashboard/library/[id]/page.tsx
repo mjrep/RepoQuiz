@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { 
   Star, Share2, MoreHorizontal, ChevronRight, 
-  Layers, Pencil, Check, Folder as FolderIcon, RefreshCw, Trash2
+  Layers, Pencil, Check, Folder as FolderIcon, RefreshCw, Trash2, Plus
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
@@ -36,6 +36,7 @@ export default function LibraryDeckHubPage({
   const [isMoveOpen, setIsMoveOpen] = useState(false)
   const [folders, setFolders] = useState<any[]>([])
   const [isCopying, setIsCopying] = useState(false)
+  const [isSavingToLibrary, setIsSavingToLibrary] = useState(false)
   const moreMenuRef = useRef<HTMLDivElement>(null)
 
   const supabase = createClient()
@@ -135,94 +136,154 @@ export default function LibraryDeckHubPage({
     router.refresh()
   }
 
+  const handleSaveToLibrary = async () => {
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    
+    setIsSavingToLibrary(true)
+    try {
+      // 1. Create new deck
+      const { data: newDeck, error: deckError } = await supabase
+        .from('decks')
+        .insert({
+          title: `${deck.title} (Copy)`,
+          description: deck.description,
+          user_id: user.id,
+          is_public: false
+        })
+        .select()
+        .single()
+
+      if (deckError) throw deckError
+
+      // 2. Copy cards
+      if (cards.length > 0) {
+        const cardsToInsert = cards.map(c => ({
+          deck_id: newDeck.id,
+          question: c.question,
+          answer: c.answer
+        }))
+        const { error: cardsError } = await supabase.from('cards').insert(cardsToInsert)
+        if (cardsError) throw cardsError
+      }
+
+      router.push(`/dashboard/library/${newDeck.id}`)
+    } catch (error) {
+      console.error('Error copying deck:', error)
+      alert('Failed to save deck to library.')
+    } finally {
+      setIsSavingToLibrary(false)
+    }
+  }
+
   return (
     <>
       <Topbar 
         userId={user?.id || ''} 
-        displayName={authorName} 
+        displayName={user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Explorer'} 
+        userEmail={user?.email}
       />
 
       <div className="flex-1 overflow-y-auto scroll-smooth">
         <div className="w-full px-4 md:px-12 py-6 md:py-8 space-y-6 md:space-y-8">
           
           {/* Breadcrumbs & Actions */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">
-              <Link href="/dashboard/library" className="hover:text-primary transition-colors">Decks</Link>
-              <ChevronRight className="w-3 h-3" />
-              <span className="text-foreground truncate max-w-[150px] md:max-w-[200px]">{deck.title}</span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5 text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 overflow-hidden flex-1">
+              <Link href="/dashboard/library" className="hover:text-primary transition-colors flex-shrink-0">Decks</Link>
+              <ChevronRight className="w-2.5 h-2.5 flex-shrink-0" />
+              <span className="text-foreground truncate">{deck.title}</span>
             </div>
-            <div className="flex items-center gap-2 relative" ref={moreMenuRef}>
+            <div className="flex items-center gap-1.5 md:gap-2 relative flex-shrink-0" ref={moreMenuRef}>
               <button 
                 onClick={handleTogglePin}
-                className={`p-2 rounded-lg bg-card border border-border transition-all ${deck.is_favorite ? 'text-yellow-500 border-yellow-500/50 bg-yellow-500/5' : 'text-muted-foreground hover:text-primary'}`}
+                className={`p-2 rounded-xl bg-card border border-border transition-all flex-shrink-0 ${deck.is_favorite ? 'text-yellow-500 border-yellow-500/50 bg-yellow-500/5' : 'text-muted-foreground hover:text-primary'}`}
               >
                 <Star className={`w-4 h-4 ${deck.is_favorite ? 'fill-current' : ''}`} />
               </button>
-                <button 
-                  onClick={handleShare}
-                  className={`p-2 rounded-lg bg-card border border-border transition-all flex items-center gap-2 ${isCopying ? 'text-emerald-500 border-emerald-500/50 bg-emerald-500/5' : 'text-muted-foreground hover:text-primary'}`}
-                >
-                  {isCopying ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                  {isCopying && <span className="text-[10px] font-black uppercase tracking-widest">Copied Link!</span>}
-                </button>
-                
-                {isOwner && (
-                  <div className="relative">
-                    <button 
-                      onClick={() => setIsMoreOpen(!isMoreOpen)}
-                      className={`p-2 rounded-lg bg-card border border-border transition-all ${isMoreOpen ? 'text-primary border-primary/50' : 'text-muted-foreground hover:text-primary'}`}
-                    >
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
-                    
-                    <AnimatePresence>
-                      {isMoreOpen && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-2xl z-50 py-2 overflow-hidden"
-                        >
-                          <Link href={`/dashboard/library/${deck.id}?editing=true`} className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center gap-3">
-                            <Pencil className="w-3.5 h-3.5" /> Edit Deck
-                          </Link>
-                          
-                          <div className="relative">
-                            <button 
-                              onClick={() => setIsMoveOpen(!isMoveOpen)}
-                              className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center justify-between group"
-                            >
-                              <div className="flex items-center gap-3"><FolderIcon className="w-3.5 h-3.5" /> Move to Folder</div>
-                              <ChevronRight className={`w-3 h-3 transition-transform ${isMoveOpen ? 'rotate-90' : ''}`} />
-                            </button>
-                            {isMoveOpen && (
-                              <div className="bg-muted/30 py-1 max-h-32 overflow-y-auto">
-                                <button onClick={() => handleMoveToFolder(null)} className="w-full text-left px-8 py-2 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors">None (Unfile)</button>
-                                {folders.map(f => (
-                                  <button key={f.id} onClick={() => handleMoveToFolder(f.id)} className="w-full text-left px-8 py-2 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors truncate">{f.name}</button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+              <button 
+                onClick={handleShare}
+                className={`p-2 rounded-xl bg-card border border-border transition-all flex items-center gap-2 flex-shrink-0 ${isCopying ? 'text-emerald-500 border-emerald-500/50 bg-emerald-500/5' : 'text-muted-foreground hover:text-primary'}`}
+              >
+                {isCopying ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                {isCopying && <span className="text-[9px] font-black uppercase tracking-widest hidden xs:inline">Copied!</span>}
+              </button>
+              
+              {isOwner && (
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsMoreOpen(!isMoreOpen)}
+                    className={`p-2 rounded-xl bg-card border border-border transition-all flex-shrink-0 ${isMoreOpen ? 'text-primary border-primary/50' : 'text-muted-foreground hover:text-primary'}`}
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                  
+                  <AnimatePresence>
+                    {isMoreOpen && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-2xl shadow-2xl z-50 py-2 overflow-hidden"
+                      >
+                        <Link href={`/dashboard/library/${deck.id}?editing=true`} className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center gap-3">
+                          <Pencil className="w-3.5 h-3.5" /> Edit Deck
+                        </Link>
+                        
+                        <div className="relative">
+                          <button 
+                            onClick={() => setIsMoveOpen(!isMoveOpen)}
+                            className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center justify-between group"
+                          >
+                            <div className="flex items-center gap-3"><FolderIcon className="w-3.5 h-3.5" /> Move to Folder</div>
+                            <ChevronRight className={`w-3 h-3 transition-transform ${isMoveOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          {isMoveOpen && (
+                            <div className="bg-muted/30 py-1 max-h-32 overflow-y-auto">
+                              <button onClick={() => handleMoveToFolder(null)} className="w-full text-left px-8 py-2 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors">None (Unfile)</button>
+                              {folders.map(f => (
+                                <button key={f.id} onClick={() => handleMoveToFolder(f.id)} className="w-full text-left px-8 py-2 text-[9px] font-bold text-muted-foreground hover:text-primary transition-colors truncate">{f.name}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
 
-                          <button 
-                            onClick={handleClearProgress}
-                            className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center gap-3 border-t border-border mt-1"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" /> Clear Progress
-                          </button>
-                          <button 
-                            onClick={handleDeleteDeck}
-                            className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-destructive/10 text-destructive transition-colors flex items-center gap-3"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Delete Deck
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
+                        <button 
+                          onClick={handleClearProgress}
+                          className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-muted text-muted-foreground transition-colors flex items-center gap-3 border-t border-border mt-1"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" /> Clear Progress
+                        </button>
+                        <button 
+                          onClick={handleDeleteDeck}
+                          className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-destructive/10 text-destructive transition-colors flex items-center gap-3"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete Deck
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+              {!isOwner && (
+                <button 
+                  onClick={handleSaveToLibrary}
+                  disabled={isSavingToLibrary}
+                  className="px-3 md:px-4 py-2 bg-primary text-primary-foreground rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSavingToLibrary ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">Save to Library</span>
+                      <span className="xs:hidden">Save</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
@@ -240,25 +301,27 @@ export default function LibraryDeckHubPage({
             <>
               {/* Title & Info - Compact */}
               <div className="space-y-3">
-                <h1 className="text-2xl md:text-4xl font-black tracking-tight text-foreground leading-tight">{deck.title}</h1>
-                <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary flex items-center justify-center text-[9px] md:text-[10px] font-bold text-primary-foreground">
-                      {authorName.charAt(0)}
+                <h1 className="text-xl md:text-3xl lg:text-4xl font-black tracking-tight text-foreground leading-tight">{deck.title}</h1>
+                <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                  <div className="flex items-center gap-1.5 md:gap-2 mr-2">
+                    <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary flex items-center justify-center text-[8px] md:text-[10px] font-black text-primary-foreground shadow-sm">
+                      {authorName.charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-[11px] md:text-xs font-bold text-foreground">{authorName}</span>
+                    <span className="text-[10px] md:text-xs font-bold text-foreground truncate max-w-[100px] md:max-w-none">{authorName}</span>
                   </div>
-                  <div className="h-3 w-[1px] bg-border hidden md:block" />
-                  <span className="px-3 py-0.5 bg-muted border border-border rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                    {cards?.length || 0} Terms
-                  </span>
-                  {deck.is_public && (
-                    <span className="px-3 py-0.5 bg-emerald-500/10 border border-emerald-500/50 rounded-full text-[8px] md:text-[9px] font-black uppercase tracking-widest text-emerald-500">
-                      Publicly Shared
+                  <div className="h-3 w-[1px] bg-border hidden sm:block" />
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-muted border border-border rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                      {cards?.length || 0} Terms
                     </span>
-                  )}
+                    {deck.is_public && (
+                      <span className="px-2 py-0.5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest text-emerald-500 whitespace-nowrap">
+                        Publicly Shared
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs md:text-sm text-muted-foreground font-medium leading-relaxed max-w-2xl">
+                <p className="text-[11px] md:text-sm text-muted-foreground font-medium leading-relaxed max-w-2xl italic">
                   {deck.description || "Master these concepts through active recall and spaced repetition."}
                 </p>
               </div>

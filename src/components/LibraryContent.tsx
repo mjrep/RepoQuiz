@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { 
   LayoutGrid, Star, Folder as FolderIcon, ChevronDown, 
   MoreVertical, Edit2, Trash2, Pin, Copy, Move, X, Check,
-  Clock
+  Clock, Globe, Lock
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -19,6 +19,7 @@ interface Deck {
   updated_at: string
   folder_id: string | null
   is_favorite?: boolean
+  is_public?: boolean
   cards?: { count: number }[]
 }
 
@@ -159,18 +160,18 @@ export default function LibraryContent({ decks: initialDecks, folders: initialFo
           placeholder="Search decks..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-card border border-border rounded-2xl px-6 py-3.5 text-base focus:outline-none focus:border-primary transition-all shadow-sm group-hover:border-primary/50 placeholder:text-muted-foreground/30"
+          className="w-full bg-card border border-border rounded-2xl px-5 py-2.5 md:py-3.5 text-sm md:text-base focus:outline-none focus:border-primary transition-all shadow-sm group-hover:border-primary/50 placeholder:text-muted-foreground/30"
         />
       </div>
 
-      <div className="flex flex-row items-center justify-between gap-6">
-        <div className="relative">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-6">
+        <div className="relative w-full sm:w-auto">
           <button 
             onClick={() => setIsSortOpen(!isSortOpen)}
-            className="flex items-center gap-2 bg-card border border-border px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-colors text-muted-foreground whitespace-nowrap"
+            className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 bg-card border border-border px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-muted transition-colors text-muted-foreground whitespace-nowrap"
           >
-            Filter: {sortOptions.find(o => o.value === sortBy)?.label}
-            <ChevronDown className={`w-3 h-3 transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
+            <span className="truncate">Filter: {sortOptions.find(o => o.value === sortBy)?.label}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform flex-shrink-0 ${isSortOpen ? 'rotate-180' : ''}`} />
           </button>
           
           <AnimatePresence>
@@ -179,7 +180,7 @@ export default function LibraryContent({ decks: initialDecks, folders: initialFo
                 initial={{ opacity: 0, y: -10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 py-2"
+                className="absolute top-full left-0 mt-2 w-full sm:w-48 bg-card border border-border rounded-xl shadow-xl z-50 py-2"
               >
                 {sortOptions.map(option => (
                   <button
@@ -198,10 +199,10 @@ export default function LibraryContent({ decks: initialDecks, folders: initialFo
           </AnimatePresence>
         </div>
 
-        <div className="flex bg-card border border-border p-1 rounded-xl shadow-sm">
+        <div className="flex w-full sm:w-auto bg-card border border-border p-1 rounded-xl shadow-sm">
           <button 
             onClick={() => setView('folders')}
-            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
               view === 'folders' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -209,7 +210,7 @@ export default function LibraryContent({ decks: initialDecks, folders: initialFo
           </button>
           <button 
             onClick={() => setView('all')}
-            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
               view === 'all' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -548,20 +549,32 @@ function DeckCard({ deck, folders, setLocalDecks, initialDecks }: DeckCardProps)
         </div>
         
         <div className="mt-auto pt-3 flex items-center justify-between border-t border-border/30 relative z-10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 italic">
               <Clock className="w-2.5 h-2.5" />
               {formatRelativeTime(deck.updated_at || deck.created_at)}
             </div>
-            <span className="text-[9px] font-black uppercase tracking-widest text-primary font-bold">
-              {cardCount} terms
-            </span>
+            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${
+              deck.is_public 
+                ? 'bg-blue-500/5 text-blue-500 border-blue-500/10' 
+                : 'bg-muted text-muted-foreground/60 border-border'
+            }`}>
+              {deck.is_public ? (
+                <>
+                  <Globe className="w-2.5 h-2.5" />
+                  Public
+                </>
+              ) : (
+                <>
+                  <Lock className="w-2.5 h-2.5" />
+                  Private
+                </>
+              )}
+            </div>
           </div>
-          {deck.is_favorite && (
-             <span className="text-[9px] font-black uppercase tracking-widest text-yellow-500 flex items-center gap-1">
-               <Pin className="w-2.5 h-2.5" /> Pinned
-             </span>
-          )}
+          <span className="text-[9px] font-black uppercase tracking-widest text-primary font-bold">
+            {cardCount} terms
+          </span>
         </div>
         
         <Link href={`/dashboard/library/${deck.id}`} className="absolute inset-0 z-0" />

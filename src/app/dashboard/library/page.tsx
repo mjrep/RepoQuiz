@@ -35,10 +35,11 @@ export default async function LibraryListViewPage() {
       <Topbar 
         userId={user.id} 
         displayName={displayName} 
+        userEmail={user.email}
       />
 
       <div className="flex-1 overflow-y-auto scroll-smooth bg-background transition-colors duration-300">
-        <div className="w-full px-12 md:px-20 py-12 flex flex-col min-h-full">
+        <div className="w-full px-4 md:px-12 py-6 md:py-10 flex flex-col min-h-full">
           <div className="flex-1 space-y-10">
             {/* Header Section */}
             <div className="flex items-center justify-between">

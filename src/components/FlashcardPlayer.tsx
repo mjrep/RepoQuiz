@@ -101,70 +101,60 @@ export default function FlashcardPlayer({ deckTitle, cards: initialCards, onClos
   const progress = ((currentIndex + 1) / cards.length) * 100
 
   return (
-    <div className={`fixed inset-0 z-[300] bg-background flex flex-col transition-all duration-500 ${isFocusMode ? 'p-0' : 'p-6 md:p-12'}`}>
+    <div className={`fixed inset-0 z-[300] bg-background flex flex-col transition-all duration-500 ${isFocusMode ? 'p-0' : 'p-4 md:p-12'}`}>
       
       {/* Header Bar */}
       {!isFocusMode && (
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-black tracking-tight text-foreground">
-              Flashcard Mode <span className="text-muted-foreground font-medium ml-2">— {deckTitle}</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-12">
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <h1 className="text-xl md:text-2xl font-black tracking-tight text-foreground truncate">
+              Flashcards <span className="text-muted-foreground font-medium ml-1 hidden sm:inline">— {deckTitle}</span>
             </h1>
+            <button 
+              onClick={onClose}
+              className="md:hidden p-2 rounded-xl bg-destructive/10 text-destructive"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="flex bg-muted border border-border p-1 rounded-2xl">
-              <button 
-                onClick={() => setAutoPlaySpeed(v => v === 3 ? null : 3)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${autoPlaySpeed === 3 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                3s
-              </button>
-              <button 
-                onClick={() => setAutoPlaySpeed(v => v === 5 ? null : 5)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${autoPlaySpeed === 5 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                5s
-              </button>
-              <button 
-                onClick={() => setAutoPlaySpeed(v => v === 10 ? null : 10)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${autoPlaySpeed === 10 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                10s
-              </button>
+          <div className="flex items-center gap-2 md:gap-3 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+            <div className="flex bg-muted border border-border p-1 rounded-xl md:rounded-2xl flex-shrink-0">
+              {[3, 5, 10].map(s => (
+                <button 
+                  key={s}
+                  onClick={() => setAutoPlaySpeed(v => v === s ? null : s)}
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${autoPlaySpeed === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  {s}s
+                </button>
+              ))}
             </div>
 
             <button 
               onClick={toggleShuffle}
-              className={`flex items-center gap-2 px-5 py-3 rounded-2xl border transition-all text-[10px] font-black uppercase tracking-widest ${isShuffled ? 'bg-primary/10 border-primary text-primary' : 'bg-muted border-border text-muted-foreground hover:text-foreground hover:border-foreground/20'}`}
+              className={`flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 rounded-xl md:rounded-2xl border transition-all text-[9px] md:text-[10px] font-black uppercase tracking-widest flex-shrink-0 ${isShuffled ? 'bg-primary/10 border-primary text-primary' : 'bg-muted border-border text-muted-foreground hover:text-foreground'}`}
             >
-              <Shuffle className="w-4 h-4" /> Shuffle
+              <Shuffle className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Shuffle</span>
             </button>
             
             <button 
               onClick={reset}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all text-[10px] font-black uppercase tracking-widest"
+              className="flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 rounded-xl md:rounded-2xl bg-muted border border-border text-muted-foreground transition-all text-[9px] md:text-[10px] font-black uppercase tracking-widest flex-shrink-0"
             >
-              <RotateCcw className="w-4 h-4" /> Reset
+              <RotateCcw className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Reset</span>
             </button>
 
             <button 
               onClick={() => setIsFocusMode(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-muted border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all text-[10px] font-black uppercase tracking-widest"
+              className="hidden sm:flex items-center gap-2 px-5 py-3 rounded-2xl bg-muted border border-border text-muted-foreground transition-all text-[10px] font-black uppercase tracking-widest flex-shrink-0"
             >
               <Maximize2 className="w-4 h-4" /> Focus
             </button>
 
             <button 
-              onClick={() => setShowShortcuts(true)}
-              className="p-3 rounded-2xl bg-muted border border-border text-muted-foreground hover:text-foreground transition-all"
-            >
-              <Keyboard className="w-5 h-5" />
-            </button>
-
-            <button 
               onClick={onClose}
-              className="p-3 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 transition-all ml-4"
+              className="hidden md:flex p-3 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20 transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -173,7 +163,7 @@ export default function FlashcardPlayer({ deckTitle, cards: initialCards, onClos
       )}
 
       {/* Progress Line */}
-      <div className="w-full h-1 bg-muted relative overflow-hidden mb-12">
+      <div className="w-full h-1 bg-muted relative overflow-hidden mb-8 md:mb-12">
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
@@ -182,28 +172,28 @@ export default function FlashcardPlayer({ deckTitle, cards: initialCards, onClos
       </div>
 
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col items-center justify-center relative ${isFocusMode ? 'p-12' : ''}`}>
+      <div className={`flex-1 flex flex-col items-center justify-center relative ${isFocusMode ? 'p-6 md:p-12' : ''}`}>
         
         {isFocusMode && (
           <button 
             onClick={() => setIsFocusMode(false)}
-            className="absolute top-8 right-8 p-3 rounded-2xl bg-muted text-muted-foreground hover:text-foreground transition-all z-50"
+            className="absolute top-4 right-4 md:top-8 md:right-8 p-3 rounded-xl md:rounded-2xl bg-muted text-muted-foreground hover:text-foreground transition-all z-50"
           >
             <X className="w-6 h-6" />
           </button>
         )}
 
-        <div className="w-full max-w-4xl space-y-8">
+        <div className="w-full max-w-4xl space-y-4 md:space-y-8">
           {/* Card Counter */}
-          <div className="flex items-center justify-between px-4">
-             <span className="text-xs font-black tracking-widest text-muted-foreground/30">{currentIndex + 1} / {cards.length}</span>
-             <span className="text-[10px] font-black tracking-[0.2em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">Active Learning</span>
+          <div className="flex items-center justify-between px-2 md:px-4">
+             <span className="text-[10px] md:text-xs font-black tracking-widest text-muted-foreground/30">{currentIndex + 1} / {cards.length}</span>
+             <span className="text-[8px] md:text-[10px] font-black tracking-[0.2em] text-primary uppercase bg-primary/10 px-3 py-1 rounded-full">Active Learning</span>
           </div>
 
           {/* Flashcard */}
           <div 
             onClick={() => setIsFlipped(!isFlipped)}
-            className="group relative w-full aspect-[16/9] cursor-pointer perspective-1000"
+            className="group relative w-full aspect-[4/5] sm:aspect-[16/9] cursor-pointer perspective-1000"
           >
             <motion.div 
               initial={false}
@@ -212,47 +202,50 @@ export default function FlashcardPlayer({ deckTitle, cards: initialCards, onClos
               className="w-full h-full relative preserve-3d"
             >
               {/* Front */}
-              <div className="absolute inset-0 backface-hidden bg-card border border-border rounded-[3rem] p-16 flex flex-col items-center justify-center text-center space-y-8 shadow-2xl">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20">Question</span>
-                <h2 className="text-4xl md:text-5xl font-black text-foreground leading-tight">
+              <div className="absolute inset-0 backface-hidden bg-card border border-border rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 flex flex-col items-center justify-center text-center space-y-4 md:space-y-8 shadow-2xl overflow-y-auto">
+                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20 flex-shrink-0">Question</span>
+                <h2 className="text-xl md:text-5xl font-black text-foreground leading-tight">
                   {cards[currentIndex].question}
                 </h2>
-                <span className="text-xs font-bold text-muted-foreground/40 mt-8">Click or press <span className="bg-muted px-2 py-1 rounded-md">Space</span> to flip</span>
+                <span className="text-[10px] font-bold text-muted-foreground/40 mt-4 md:mt-8 flex-shrink-0">Click or press <span className="bg-muted px-2 py-1 rounded-md">Space</span> to flip</span>
               </div>
 
               {/* Back */}
-              <div className="absolute inset-0 backface-hidden bg-primary border border-primary/20 rounded-[3rem] p-16 flex flex-col items-center justify-center text-center space-y-8 shadow-2xl rotateY-180">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-foreground/40">Answer</span>
-                <h2 className="text-4xl md:text-5xl font-black text-primary-foreground leading-tight">
+              <div className="absolute inset-0 backface-hidden bg-primary border border-primary/20 rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 flex flex-col items-center justify-center text-center space-y-4 md:space-y-8 shadow-2xl rotateY-180 overflow-y-auto">
+                <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-primary-foreground/40 flex-shrink-0">Answer</span>
+                <h2 className="text-xl md:text-5xl font-black text-primary-foreground leading-tight">
                   {cards[currentIndex].answer}
                 </h2>
-                <span className="text-xs font-bold text-primary-foreground/40 mt-8">Click to flip back</span>
+                <span className="text-[10px] font-bold text-primary-foreground/40 mt-4 md:mt-8 flex-shrink-0">Click to flip back</span>
               </div>
             </motion.div>
           </div>
 
           {/* Navigation Controls */}
-          <div className="flex items-center justify-between px-8 pt-8">
+          <div className="flex items-center justify-between px-4 md:px-8 pt-4 md:pt-8">
             <button 
               onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-              className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all group"
+              className="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all group"
             >
               <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
               Prev
             </button>
             
-            <div className="flex items-center gap-2">
-              {cards.map((_, idx) => (
+            <div className="hidden sm:flex items-center gap-2">
+              {cards.length < 20 && cards.map((_, idx) => (
                 <div 
                   key={idx} 
                   className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-6 bg-primary' : 'w-1.5 bg-muted'}`} 
                 />
               ))}
+              {cards.length >= 20 && (
+                <span className="text-[10px] font-black text-muted-foreground/50">{currentIndex + 1} of {cards.length}</span>
+              )}
             </div>
 
             <button 
               onClick={(e) => { e.stopPropagation(); handleNext(); }}
-              className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all group"
+              className="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all group"
             >
               Next
               <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
