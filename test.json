@@ -1,0 +1,11 @@
+[
+  {
+    "question": "What does SSR stand for?",
+    "answer": "Server-Side Rendering",
+    "multiple_choice_options": ["Server-Side Rendering", "Static Site Rendering", "Single State React"]
+  },
+  {
+    "question": "What port does Next.js use by default?",
+    "answer": "3000"
+  }
+]
