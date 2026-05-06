@@ -23,6 +23,10 @@ export default function StudyPage() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [studyMode, setStudyMode] = useState<'flashcard' | 'quiz'>('flashcard')
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
+  const [isSortingMode, setIsSortingMode] = useState(false)
+  const [knowCards, setKnowCards] = useState<Set<string>>(new Set())
+  const [dontKnowCards, setDontKnowCards] = useState<Set<string>>(new Set())
+  const [showSummary, setShowSummary] = useState(false)
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -48,6 +52,41 @@ export default function StudyPage() {
       setCurrentIndex((prev) => prev + 1)
       setIsFlipped(false)
       setSelectedOption(null)
+    } else {
+      setShowSummary(true)
+    }
+  }
+
+  const handleSortCard = (isKnown: boolean) => {
+    const cardId = cards[currentIndex].id
+    if (isKnown) {
+      setKnowCards(prev => {
+        const next = new Set(prev)
+        next.add(cardId)
+        return next
+      })
+      setDontKnowCards(prev => {
+        const next = new Set(prev)
+        next.delete(cardId)
+        return next
+      })
+    } else {
+      setDontKnowCards(prev => {
+        const next = new Set(prev)
+        next.add(cardId)
+        return next
+      })
+      setKnowCards(prev => {
+        const next = new Set(prev)
+        next.delete(cardId)
+        return next
+      })
+    }
+    
+    if (currentIndex < cards.length - 1) {
+      goToNextCard()
+    } else {
+      setShowSummary(true)
     }
   }
 
@@ -114,30 +153,90 @@ export default function StudyPage() {
             </div>
           </div>
 
-          {/* Mode Toggle Switch */}
-          <div className="flex bg-[#141414] border border-[#262626] rounded-2xl p-1 p-x-1.5">
-            <button
-              onClick={() => setStudyMode('flashcard')}
-              className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                studyMode === 'flashcard' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'
-              }`}
-            >
-              Flashcard
-            </button>
-            <button
-              onClick={() => setStudyMode('quiz')}
-              className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                studyMode === 'quiz' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'
-              }`}
-            >
-              Quiz
-            </button>
+          {/* Mode & Sorting Toggle Switch */}
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {/* Study Mode */}
+            <div className="flex bg-[#141414] border border-[#262626] rounded-2xl p-1 p-x-1.5">
+              <button
+                onClick={() => setStudyMode('flashcard')}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                  studyMode === 'flashcard' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'
+                }`}
+              >
+                Flashcard
+              </button>
+              <button
+                onClick={() => setStudyMode('quiz')}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                  studyMode === 'quiz' ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'
+                }`}
+              >
+                Quiz
+              </button>
+            </div>
+
+            {/* Sorting Mode Toggle */}
+            {studyMode === 'flashcard' && (
+              <button
+                onClick={() => setIsSortingMode(!isSortingMode)}
+                className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all ${
+                  isSortingMode 
+                    ? 'bg-blue-600/10 border-blue-500 text-blue-500 shadow-lg shadow-blue-500/10' 
+                    : 'bg-[#141414] border-[#262626] text-gray-500 hover:border-gray-700'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded-full border-2 transition-all ${isSortingMode ? 'bg-blue-500 border-blue-500' : 'border-gray-700'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Sorting Mode</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Study Area */}
+        {/* Study Area / Summary Area */}
         <div className="flex-1 flex flex-col items-center justify-center py-4">
-          {studyMode === 'flashcard' ? (
+          {showSummary ? (
+            <div className="w-full max-w-2xl bg-[#141414] border border-[#262626] rounded-[3rem] p-12 text-center animate-in zoom-in-95 duration-500">
+              <div className="w-24 h-24 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-8">
+                <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-black mb-4">Session Complete!</h2>
+              <p className="text-gray-500 mb-12">You've reached the end of the deck.</p>
+              
+              <div className="grid grid-cols-2 gap-6 mb-12">
+                <div className="p-8 rounded-[2rem] bg-green-500/10 border border-green-500/20">
+                  <div className="text-4xl font-black text-green-500 mb-2">{knowCards.size}</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-green-500/50">Known</div>
+                </div>
+                <div className="p-8 rounded-[2rem] bg-red-500/10 border border-red-500/20">
+                  <div className="text-4xl font-black text-red-500 mb-2">{dontKnowCards.size}</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-red-500/50">To Review</div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <button
+                  onClick={() => {
+                    setCurrentIndex(0)
+                    setIsFlipped(false)
+                    setShowSummary(false)
+                    setKnowCards(new Set())
+                    setDontKnowCards(new Set())
+                  }}
+                  className="w-full py-5 bg-white text-black rounded-[1.5rem] font-black text-sm uppercase tracking-widest hover:bg-gray-200 transition-all"
+                >
+                  Restart Session
+                </button>
+                <Link
+                  href={`/dashboard/deck/${id}`}
+                  className="w-full py-5 bg-[#262626] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest hover:bg-[#333] transition-all"
+                >
+                  Return to Deck
+                </Link>
+              </div>
+            </div>
+          ) : studyMode === 'flashcard' ? (
             <div className="w-full max-w-2xl perspective-1000">
               <div
                 onClick={() => setIsFlipped(!isFlipped)}
@@ -159,26 +258,63 @@ export default function StudyPage() {
                 </div>
               </div>
 
-              {/* Navigation Controls */}
-              <div className="flex items-center justify-center gap-6 mt-12">
-                <button
-                  onClick={goToPrevCard}
-                  disabled={currentIndex === 0}
-                  className="w-16 h-16 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center hover:border-white transition-all disabled:opacity-20 disabled:cursor-not-allowed group"
-                >
-                  <svg className="w-6 h-6 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={goToNextCard}
-                  disabled={currentIndex === cards.length - 1}
-                  className="w-16 h-16 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center hover:border-white transition-all disabled:opacity-20 disabled:cursor-not-allowed group"
-                >
-                  <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+              {/* Navigation & Sorting Controls */}
+              <div className="flex flex-col items-center gap-8 mt-12">
+                {isSortingMode ? (
+                  <div className="flex items-center justify-center gap-6 w-full max-w-sm">
+                    <button
+                      onClick={() => handleSortCard(false)}
+                      className="flex-1 py-6 rounded-[2rem] bg-red-500/10 border-2 border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex flex-col items-center justify-center gap-2 group"
+                    >
+                      <svg className="w-8 h-8 transform group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Don't Know</span>
+                    </button>
+                    <button
+                      onClick={() => handleSortCard(true)}
+                      className="flex-1 py-6 rounded-[2rem] bg-green-500/10 border-2 border-green-500/50 text-green-500 hover:bg-green-500 hover:text-white transition-all flex flex-col items-center justify-center gap-2 group"
+                    >
+                      <svg className="w-8 h-8 transform group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-[10px] font-black uppercase tracking-widest">I Know This</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-6">
+                    <button
+                      onClick={goToPrevCard}
+                      disabled={currentIndex === 0}
+                      className="w-16 h-16 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center hover:border-white transition-all disabled:opacity-20 disabled:cursor-not-allowed group"
+                    >
+                      <svg className="w-6 h-6 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={goToNextCard}
+                      disabled={currentIndex === cards.length - 1}
+                      className="w-16 h-16 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center hover:border-white transition-all disabled:opacity-20 disabled:cursor-not-allowed group"
+                    >
+                      <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                {/* Sorting Stats Indicator */}
+                {isSortingMode && (
+                  <div className="flex gap-4">
+                    <div className="px-4 py-2 bg-green-500/10 rounded-full border border-green-500/20">
+                      <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">{knowCards.size} Known</span>
+                    </div>
+                    <div className="px-4 py-2 bg-red-500/10 rounded-full border border-red-500/20">
+                      <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">{dontKnowCards.size} To Review</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import SignOutButton from './SignOutButton'
+import Image from 'next/image'
 import { LayoutDashboard, BookOpen, GraduationCap } from 'lucide-react'
 
 export default function Sidebar() {
@@ -16,11 +17,17 @@ export default function Sidebar() {
 
   return (
     <aside className="w-72 bg-card border-r border-border flex flex-col hidden lg:flex h-full sticky top-0 transition-colors duration-300">
-      <div className="p-8 flex items-center gap-4">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-          <span className="text-primary-foreground font-bold text-base">R</span>
+      <div className="p-10 flex flex-col items-center gap-4 border-b border-border mb-4">
+        <div className="relative w-28 h-28">
+          <Image 
+            src="/logo.png" 
+            alt="RepoQuiz Logo" 
+            fill
+            priority 
+            className="object-contain"
+          />
         </div>
-        <span className="text-2xl font-black tracking-tighter text-foreground">RepoQuiz</span>
+        <span className="text-3xl font-black tracking-tighter text-foreground text-center">RepoQuiz</span>
       </div>
 
       <nav className="flex-1 px-4 space-y-2 mt-4">

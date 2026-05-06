@@ -2,6 +2,8 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Topbar from '@/components/Topbar'
+import Image from 'next/image'
+import MascotBanner from '@/components/MascotBanner'
 import { Sparkles, LayoutGrid, ArrowRight, Zap, TrendingUp } from 'lucide-react'
 
 export default async function DashboardMainPage() {
@@ -38,55 +40,41 @@ export default async function DashboardMainPage() {
       <Topbar userId={user.id} displayName={displayName} userEmail={user.email} />
       
       <div className="flex-1 overflow-y-auto scroll-smooth">
-        <div className="max-w-7xl mx-auto w-full px-6 md:px-12 py-6 md:py-10 space-y-8 md:space-y-10">
-          {/* Hero Section */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2 relative p-8 md:p-10 bg-primary rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-xl shadow-primary/10 flex flex-col justify-center min-h-[220px] md:min-h-[260px] text-primary-foreground">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -mr-24 -mt-24 rounded-full" />
-              <h2 className="text-2xl md:text-4xl font-black mb-3 leading-tight">Welcome back, {displayName.split(' ')[0]}!</h2>
-              <p className="text-primary-foreground/80 font-medium text-base md:text-lg max-w-lg mb-6 md:mb-8">Continue your journey towards mastery.</p>
-              <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  <span className="font-black text-[9px] md:text-[10px] uppercase tracking-widest">{streak} Day Activity</span>
+        {/* Full Width Hero Section Container */}
+        <div className="w-full px-4 md:px-8 pt-6 md:pt-10">
+          <div className="relative p-8 md:p-12 bg-primary rounded-[2rem] md:rounded-[2.5rem] overflow-visible shadow-xl shadow-primary/10 flex flex-col lg:flex-row items-center justify-between gap-12 min-h-[220px] md:min-h-[340px] text-primary-foreground max-w-[1600px] mx-auto px-10 md:px-20">
+            {/* Background Glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -mr-24 -mt-24 rounded-full" />
+            
+            <div className="relative z-20 text-center lg:text-left max-w-xl">
+              <h2 className="text-2xl md:text-5xl font-black mb-4 leading-tight">Welcome back, {displayName.split(' ')[0]}!</h2>
+              <p className="text-primary-foreground/80 font-medium text-base md:text-xl mb-8">Continue your journey towards mastery.</p>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 md:gap-4">
+                <div className="px-5 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  <span className="font-black text-[10px] md:text-[11px] uppercase tracking-widest">{streak} Day Activity</span>
                 </div>
-                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-white" />
-                  <span className="font-black text-[9px] md:text-[10px] uppercase tracking-widest">Mastery at {overallMastery}%</span>
+                <div className="px-5 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                  <span className="font-black text-[10px] md:text-[11px] uppercase tracking-widest">Mastery at {overallMastery}%</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 flex flex-col items-center justify-center text-center shadow-sm">
-              <div className="relative w-24 h-24 md:w-28 md:h-28 mb-4">
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="40" fill="none" className="stroke-muted" strokeWidth="10" />
-                  <circle 
-                    cx="50" cy="50" r="40" fill="none" 
-                    className="stroke-primary transition-all duration-1000" 
-                    strokeWidth="10" 
-                    strokeDasharray="251.2" 
-                    strokeDashoffset={251.2 - (251.2 * overallMastery / 100)} 
-                    strokeLinecap="round" 
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl md:text-2xl font-black text-foreground">{overallMastery}%</span>
-                </div>
-              </div>
-              <h3 className="text-base md:text-lg font-black text-foreground mb-1">Course Mastery</h3>
-              <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">
-                {overallMastery === 100 ? "Mastered!" : "Keep going!"}
-              </p>
+            {/* Mascot with Behavior-Based Chat - HIDDEN ON MOBILE/TABLET */}
+            <div className="hidden lg:block relative w-72 h-72 flex-shrink-0">
+              <MascotBanner streak={streak} mastery={overallMastery} />
             </div>
           </div>
+        </div>
 
+        <div className="max-w-7xl mx-auto w-full px-6 md:px-12 py-8 md:py-12 space-y-8 md:space-y-10">
           {/* Recent Decks Section */}
           <div className="space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <LayoutGrid className="w-5 h-5 text-primary" />
-                <h3 className="text-lg md:text-xl font-black tracking-tight text-foreground">Recent Decks</h3>
+                <LayoutGrid className="w-5 h-5 text-[#3e4a3d]" />
+                <h3 className="text-lg md:text-xl font-black tracking-tight text-[#3e4a3d]">Recent Decks</h3>
               </div>
               <Link href="/dashboard/library" className="text-[9px] font-black text-primary hover:text-foreground transition-colors flex items-center gap-2 uppercase tracking-widest">
                 View all <ArrowRight className="w-3 h-3" />

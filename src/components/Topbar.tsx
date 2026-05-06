@@ -5,6 +5,7 @@ import Link from 'next/link'
 import CreateNewMenu from './CreateNewMenu'
 import ThemeToggle from './ThemeToggle'
 import ProfileModal from './ProfileModal'
+import Image from 'next/image'
 
 interface TopbarProps {
   userId: string
@@ -21,6 +22,13 @@ export default function Topbar({ userId, displayName, userEmail, leftContent }: 
       {/* Background with blur - separate to avoid containing block issues for fixed modals */}
       <div className="absolute inset-0 bg-card/50 backdrop-blur-xl -z-10" />
       
+      <div className="flex items-center gap-4 md:hidden">
+        <div className="relative w-14 h-14">
+          <Image src="/logo.png" alt="RepoQuiz Logo" fill className="object-contain" />
+        </div>
+        <span className="text-xl font-black tracking-tighter text-foreground">RepoQuiz</span>
+      </div>
+
       <div className="flex-1 max-w-2xl relative hidden md:block">
         {leftContent || (
           <div className="relative group">

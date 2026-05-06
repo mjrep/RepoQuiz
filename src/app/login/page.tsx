@@ -121,11 +121,17 @@ export default function LoginPage() {
         >
           <div className="w-full max-w-lg">
             <div className="mb-14">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-12 h-12 bg-[#7c9070] rounded-2xl flex items-center justify-center shadow-xl shadow-[#7c9070]/20">
-                  <span className="text-white text-2xl font-bold">R</span>
+              <div className="flex items-center gap-8 mb-16">
+                <div className="relative w-40 h-40">
+                  <Image 
+                    src="/logo.png" 
+                    alt="RepoQuiz Logo" 
+                    fill
+                    priority 
+                    className="object-contain"
+                  />
                 </div>
-                <span className="text-3xl font-black tracking-tighter text-[#3e4a3d]">RepoQuiz</span>
+                <span className="text-7xl font-black tracking-tighter text-[#3e4a3d]">RepoQuiz</span>
               </div>
               <h1 className="text-5xl font-black text-[#3e4a3d] mb-6 tracking-tight leading-tight">
                 {isLogin ? 'Welcome back' : 'Start your journey'}
@@ -217,12 +223,20 @@ export default function LoginPage() {
       {/* Mobile View */}
       <div className="lg:hidden flex flex-col min-h-screen p-10 items-center justify-center bg-[#f8f7f2]">
         <div className="w-full max-w-sm space-y-10">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-14 h-14 bg-[#7c9070] rounded-2xl flex items-center justify-center shadow-xl shadow-[#7c9070]/20">
-              <span className="text-white text-2xl font-bold">R</span>
+          <div className="p-10 flex flex-col items-center gap-4 border-b border-border mb-4">
+            <div className="relative w-24 h-24">
+              <Image 
+                src="/logo.png" 
+                alt="RepoQuiz Logo" 
+                fill
+                priority 
+                className="object-contain"
+              />
             </div>
-            <h1 className="text-4xl font-black text-[#3e4a3d]">{isLogin ? 'Login' : 'Sign Up'}</h1>
+            <span className="text-3xl font-black tracking-tighter text-[#3e4a3d]">RepoQuiz</span>
           </div>
+          <h2 className="text-4xl font-black text-[#7c9070] mt-6 text-center">{isLogin ? 'Login' : 'Sign Up'}</h2>
+          
           <form onSubmit={handleAuth} className="space-y-6">
             {!isLogin && (
               <input
