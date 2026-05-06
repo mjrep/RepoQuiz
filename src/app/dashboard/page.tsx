@@ -39,10 +39,10 @@ export default async function DashboardMainPage() {
     <>
       <Topbar userId={user.id} displayName={displayName} userEmail={user.email} />
       
-      <div className="flex-1 overflow-y-auto scroll-smooth">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
         {/* Full Width Hero Section Container */}
-        <div className="w-full px-4 md:px-8 pt-6 md:pt-10">
-          <div className="relative p-8 md:p-12 bg-primary rounded-[2rem] md:rounded-[2.5rem] overflow-visible shadow-xl shadow-primary/10 flex flex-col lg:flex-row items-center justify-between gap-12 min-h-[220px] md:min-h-[340px] text-primary-foreground max-w-[1600px] mx-auto px-10 md:px-20">
+        <div className="w-full px-4 md:px-8 pt-6 md:pt-10 overflow-x-hidden">
+          <div className="relative p-8 md:p-12 bg-primary rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-xl shadow-primary/10 flex flex-col lg:flex-row items-center justify-between gap-12 min-h-[220px] md:min-h-[340px] text-primary-foreground max-w-[1600px] mx-auto px-10 md:px-20">
             {/* Background Glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl -mr-24 -mt-24 rounded-full" />
             
