@@ -144,9 +144,16 @@ export default function QuizPlayer({ deckId, deckTitle, cards, userId, initialPr
     }
 
     const correct = options.answerWith === 'definition' ? currentCard.answer : currentCard.question
-    const allPossible = cards.map(c => options.answerWith === 'definition' ? c.answer : c.question)
-    const distractorPool = allPossible.filter(a => a !== correct)
-    const distractors = distractorPool.sort(() => Math.random() - 0.5).slice(0, 3)
+    
+    // Get unique answers/questions from all cards to use as distractors
+    const allPossible = Array.from(new Set(cards.map(c => options.answerWith === 'definition' ? c.answer : c.question)))
+    
+    // Filter out the correct one and shuffle the rest
+    const distractors = allPossible
+      .filter(a => a.toLowerCase().trim() !== correct.toLowerCase().trim())
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+
     return [correct, ...distractors].sort(() => Math.random() - 0.5)
   }, [quizCards, currentIndex, options.answerWith, cards])
 
