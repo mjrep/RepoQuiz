@@ -89,7 +89,25 @@ export default function LibraryDeckHubPage({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [params, searchParams, supabase])
 
-  if (loading || !deck || !resolvedParams) return null
+  if (loading || !deck || !resolvedParams) {
+    return (
+      <div className="flex-1 flex flex-col min-h-screen bg-background">
+        <Topbar userId="" displayName="" userEmail="" />
+        <div className="flex-1 p-8 md:p-12 space-y-8 animate-pulse">
+          <div className="h-4 w-48 bg-muted rounded" />
+          <div className="space-y-4">
+            <div className="h-10 w-3/4 bg-muted rounded-xl" />
+            <div className="h-4 w-1/2 bg-muted rounded" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="h-48 bg-muted rounded-[2rem]" />
+            <div className="h-48 bg-muted rounded-[2rem]" />
+          </div>
+          <div className="h-64 bg-muted rounded-[2rem]" />
+        </div>
+      </div>
+    )
+  }
 
   const isOwner = user?.id === deck.user_id
   const isEditing = isOwner && resolvedSearchParams?.editing === 'true'
